@@ -11,13 +11,16 @@ The glassmorphism look of **herdr-desk** rebuilt for Herdr, in neutral graphite:
 | `layouts/glass.json` | the layout: floating cards, 10px gaps, translucent terminals |
 | `layouts/glass.png` | the picture Settings shows for it |
 | `mods/spaces-icons/` | the Spaces list, showing each project's own icon on its avatar |
+| `mods/tabs-graph/` | the tab bar, with a Graph button when git-graph is installed |
 | `themes/glass.json` | the layout's own theme: graphite glass colors with alpha |
 | `backgrounds/glass-ambient.png` | the background picture (2560×1640) |
 | `tools/ambient.ps1` | regenerates the background (Windows PowerShell) |
 
 **Project icons:** the Spaces list (`mods/spaces-icons`, a clone of Herdr's `spaces`) shows each project's own icon on its avatar when the project has one: a Tauri app icon, `icon.*`, `logo.*`, `assets/`, `public/` logos, or a favicon, in the project folder, one folder down, or in `apps/*` / `packages/*`. Drop an `.herdr/icon.png` (or `.svg`) in a project to choose its icon. Projects without one keep the colored letter.
 
-What it touches: it reads your spaces' project folders, copies the icon it finds into `~/.config/herdr-app/data/spaces-icons/` (PNGs with `cmd /c copy` on Windows, `cp` elsewhere) and remembers the results in shared state. No network access. The other mods are Herdr's own.
+What it touches: it reads your spaces' project folders, copies the icon it finds into `~/.config/herdr-app/data/spaces-icons/` (PNGs with `cmd /c copy` on Windows, `cp` elsewhere) and remembers the results in shared state. No network access. Apart from `tabs-graph` (below), the other mods are Herdr's own.
+
+**Git Graph (optional):** the tab bar (`mods/tabs-graph`, a clone of Herdr's `tabs`) adds a **Graph** button beside `+` that opens [Git Graph](https://github.com/rabeeh-ta/herdr-git-graph) in the side panel: a commit graph of the focused terminal's repository with checkout, merge, rebase and more. Git Graph isn't bundled here: install it too (below). Without it the button simply doesn't show.
 
 ## Install
 
@@ -27,6 +30,13 @@ Copy the folders into your Herdr home (`~/.config/herdr-app`, or `HERDR_APP_HOME
 git clone https://github.com/MarcozVD/herdr-layout-glass
 cp -r herdr-layout-glass/{layouts,themes,backgrounds,mods} ~/.config/herdr-app/
 herdr-app do layout.switch '{"name":"glass"}'
+```
+
+For the Graph button, also add Git Graph (it runs `git` in your repositories; network only on Fetch/Push):
+
+```sh
+git clone https://github.com/rabeeh-ta/herdr-git-graph
+cp -R herdr-git-graph/mods/git-graph ~/.config/herdr-app/mods/
 ```
 
 On Windows PowerShell:
