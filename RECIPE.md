@@ -61,9 +61,11 @@ between every card (root padding 10, gap 10). Left to right, at zoom 1:
   `src/assets/`, `.github/`, `docs/` logos and icons, then favicons
   (`public/favicon.svg`, ...). Each candidate is tried in the folder itself, its
   subfolders and `apps/*` / `packages/*`, so monorepos work. The first hit
-  wins; PNGs under 16px wide are skipped as placeholders. Icons appear a few
-  seconds after start the first time, then at once (remembered in shared
-  state), and a project gets looked at again on the next start.
+  wins; PNGs under 16px wide are skipped as placeholders. The first search of
+  all projects takes a few seconds, one project at a time. After that the
+  results live in shared state: a layout or theme change starts a new copy of
+  the mod, which inherits them and searches nothing. A project is looked at
+  again only when it is new or its result is a day old.
 
 ## Built from
 
@@ -121,10 +123,11 @@ between every card (root padding 10, gap 10). Left to right, at zoom 1:
     `image()` only reads paths relative to the home. SVGs are copied as text
     (`fs.readFile` utf8 + `fs.writeFile`); PNGs with `exec("cmd", ["/c",
     "copy", "/y", src, dest])` on Windows, `exec("cp", [src, dest])` elsewhere.
-  - `main.js`: `roots(space, panes)` gives the project folders,
-    `lookForIcons` runs in the 250ms `checkNew` tick and searches each folder
-    once per run, results go to `this.icons` and `setShared("spaces-icons.found",
-    {folder: path|null})`; `init` starts from that shared map. `grouped` reads
+  - `main.js`: `roots(space, panes)` gives the project folders.
+    `init` loads `shared("spaces-icons.found")` (`{folder: {icon: path|null, at}}`).
+    Every 8th 250ms `checkNew` tick (2s), `lookForIcons` queues only folders
+    missing from it or older than 24h, searches the queue in one task, one
+    folder at a time, and writes the map back with one `setShared` when done. `grouped` reads
     `panes()` once per render and passes each row its `icon`; `row` draws
     `div().size(18).rounded(5).overflow_hidden().child(image(icon).size(18))`,
     else the original letter tile. Everything else is the shipped `spaces`.
@@ -141,8 +144,16 @@ between every card (root padding 10, gap 10). Left to right, at zoom 1:
 - Reading `panes()` inside each row made the list too slow to render ("This view
   could not be re-rendered"); read it once per render.
 - Spaces on other machines and the `~` space keep the letter tile. `.ico`
-  favicons aren't used (GPUI doesn't draw them). A changed icon file shows after
-  the next start; delete `data/spaces-icons/` and the shared key to forget all.
+  favicons aren't used (GPUI doesn't draw them). A new or changed icon shows
+  within a day (or delete `data/spaces-icons/` and the shared key to look again
+  now).
+- Don't search per mod copy: each layout switch and theme change starts the
+  mods fresh, so a per-run search redid every project's disk scan on every
+  switch. Searching in parallel and calling `setShared` per result also made
+  every mod redraw once per project.
+- Switching layouts in Herdr itself froze the window for up to ~5s in testing,
+  with the shipped `main`/`terminals` layouts and with the shipped `spaces`
+  mod too; it isn't this mod.
 - The rail (sidebar narrower than 160px) shows numbers, as the shipped mod does,
   not icons.
 

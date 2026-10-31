@@ -35,6 +35,15 @@ const base = (path) => path.replace(/\/+$/, "").split("/").pop();
 // for this often, in repos the list shows, while the window is in front.
 const FALLBACK = 60000;
 const ICONS = "spaces-icons.found";
+const RECHECK = 24 * 60 * 60 * 1000; // a known project is looked at again after a day
+// What every copy has found so far. Entries from an older version (a bare path) count as stale.
+function known() {
+  const out = {};
+  for (const [root, v] of Object.entries(shared(ICONS) ?? {})) {
+    out[root] = v && typeof v === "object" ? v : { icon: v ?? null, at: 0 };
+  }
+  return out;
+}
 
 // What a stored color name looks like on an avatar (the same in every mod
 // that draws space avatars): one strong color per hue, light and dark alike.
@@ -59,11 +68,13 @@ export default class Spaces extends View {
     this.ready = {}; // machine -> its layout was readable at the last look
     this.at = {}; // space -> its where() at the last look
     this.watching = new Set(); // local repos' git folders
-    // project folder -> its icon copied into the home (a path image() can show), null: none.
-    // Kept in shared state, so a copy in another layout shows them at once.
-    this.icons = { ...(shared(ICONS) ?? {}) };
-    this.looking = new Set(); // project folders being searched
-    this.searched = new Set(); // project folders searched this run
+    // project folder -> { icon: a path in the home image() can show, or null; at: when it was
+    // looked for }. Kept in shared state: a copy started by a layout or theme change inherits
+    // what an earlier copy found and searches nothing it already knows.
+    this.icons = known();
+    this.queue = []; // project folders waiting to be searched, one at a time
+    this.searching = false;
+    this.tick = 0;
     // Spaces made while this runs wait (at most a moment) for their git, so a
     // worktree appears under its repo instead of jumping there.
     this.shown = new Set(spaces().map((s) => s.id));
@@ -87,7 +98,8 @@ export default class Spaces extends View {
     const due = this.due(now, sp, ps);
     if (due.size) this.refreshGit(due, cx);
     if (sp.some((s) => !this.shown.has(s.id))) cx.notify();
-    this.lookForIcons(sp, ps, cx);
+    // Icons only need a look when a space appears or moves: every 2 s is plenty.
+    if (this.tick++ % 8 === 0) this.lookForIcons(sp, ps, cx);
   }
 
   // Where a space's project is, most specific first: its repo's top, where its
@@ -101,28 +113,39 @@ export default class Spaces extends View {
     return [...new Set([top, place(s, ps), s.folder].map(norm))].filter((p) => p && p !== me);
   }
 
-  // Each project folder is searched once per run; a space shows the first root with an icon.
+  // Searches only folders nobody has looked at, or not for a day (an icon added since), one
+  // at a time, and shares the results once the queue is empty: a new copy of this mod (a
+  // layout or theme change) reuses everything and touches no disk.
   lookForIcons(sp, ps, cx) {
+    const now = Date.now();
     for (const s of sp) for (const root of this.roots(s, ps)) {
-      if (this.searched.has(root) || this.looking.has(root)) continue;
-      this.looking.add(root);
-      cx.spawn(async (cx) => {
-        let found = null;
-        try { found = await findIcon(root); } catch {}
-        this.looking.delete(root);
-        this.searched.add(root);
-        if (this.icons[root] !== found) {
-          this.icons[root] = found;
-          setShared(ICONS, { ...(shared(ICONS) ?? {}), [root]: found });
-        }
-        cx.notify();
-      });
+      const k = this.icons[root];
+      if (k && now - k.at < RECHECK) continue;
+      if (!this.queue.includes(root)) this.queue.push(root);
     }
+    if (this.searching || !this.queue.length) return;
+    this.searching = true;
+    cx.spawn(async (cx) => {
+      let changed = false;
+      while (this.queue.length) {
+        const root = this.queue.shift();
+        // Another copy may have found it meanwhile.
+        const k = known()[root];
+        if (k && Date.now() - k.at < RECHECK) { this.icons[root] = k; continue; }
+        let icon = null;
+        try { icon = await findIcon(root); } catch {}
+        if (this.icons[root]?.icon !== icon) changed = true;
+        this.icons[root] = { icon, at: Date.now() };
+      }
+      this.searching = false;
+      setShared(ICONS, { ...known(), ...this.icons });
+      if (changed) cx.notify();
+    });
   }
 
   // `ps`: panes(), read once per render by the caller.
   iconOf(s, ps) {
-    for (const root of this.roots(s, ps)) if (this.icons[root]) return this.icons[root];
+    for (const root of this.roots(s, ps)) if (this.icons[root]?.icon) return this.icons[root].icon;
     return null;
   }
 
