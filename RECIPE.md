@@ -39,6 +39,9 @@ between every card (root padding 10, gap 10). Left to right, at zoom 1:
   raised controls `#2c2c32cc`; buttons `#60b9fc` with `#14151c` text. Terminal
   cursor `#60b9fc`, selection `#45475a`, padding 14px × 12px. Fonts: Herdr's
   defaults, JetBrains Mono 14 and Geist.
+- **Project icons on the space avatars**: in the Spaces list, each space whose
+  project has an icon shows it on its 18px avatar (radius 5), in full color.
+  Spaces without one keep Herdr's colored letter tile.
 
 ## How it behaves
 
@@ -49,6 +52,18 @@ between every card (root padding 10, gap 10). Left to right, at zoom 1:
   a terminal or an agent, the tab bar opens Files/Changes, `ctrl-shift-b` folds
   the sidebar, `ctrl-shift-l` cycles layouts, panes drag by the top-center grip.
 - Nothing animates; the background is a still picture.
+- **Project icons**: for each space on this computer, the `spaces-icons` mod
+  looks in its project folder (the git repo's top, else where its first terminal
+  is, else where the space was made; never the home folder) for, in this order:
+  `.herdr/icon.svg|png` (an override), Tauri icons
+  (`src-tauri/icons/128x128@2x.png`, `128x128.png`, `icon.png`), `icon.*`,
+  `logo.*`, `assets/`, `build/`, `resources/`, `src/app/`, `public/`,
+  `src/assets/`, `.github/`, `docs/` logos and icons, then favicons
+  (`public/favicon.svg`, ...). Each candidate is tried in the folder itself, its
+  subfolders and `apps/*` / `packages/*`, so monorepos work. The first hit
+  wins; PNGs under 16px wide are skipped as placeholders. Icons appear a few
+  seconds after start the first time, then at once (remembered in shared
+  state), and a project gets looked at again on the next start.
 
 ## Built from
 
@@ -61,7 +76,7 @@ between every card (root padding 10, gap 10). Left to right, at zoom 1:
   - `sidebar` (column, 260px, min 44, max 480, `resizable: false`, background
     `chrome`, radius 16, border 1 `border`, shadow `lg`): `brand` (46px,
     `window_drag`, mod `workspace-chrome`), `sidebar-lists` column with
-    `spaces` and `agents` (weight 1, min 90), `sidebar-footer` (69px, mod
+    `spaces` (mod `spaces-icons`) and `agents` (weight 1, min 90), `sidebar-footer` (69px, mod
     `workspace-chrome`, props `{ "footer": true }`).
   - `work` (column, gap 8, `resizable: false`): `tabs` (42px, `window_drag`, mod
     `tabs`, `chrome`, radius 14, border 1 `border`, shadow `md`); `work-body`
@@ -71,9 +86,9 @@ between every card (root padding 10, gap 10). Left to right, at zoom 1:
     hidden `panel` column (368px, 280–900, glass like the sidebar) holding a
     `stack` of `files` and `changes`; `status` (28px, mod `workspace-status`,
     `chrome`, radius 12, border, shadow `md`).
-- Mods: only shipped ones (`workspace-chrome`, `spaces`, `agents`, `tabs`,
-  `pane`, `files`, `changes`, `workspace-status`). No custom code, no programs,
-  no network.
+- Mods: `spaces-icons` (below) for the Spaces list, and the shipped
+  `workspace-chrome`, `agents`, `tabs`, `pane`, `files`, `changes`,
+  `workspace-status`.
 - `themes/glass.json` (named like the layout, so it is the layout's own):
   top level `background` `#1a1a1e`, `foreground` `#cdd6f4`, `selection`
   `#45475a`, `cursor` `#60b9fc`, `ansi` (Catppuccin Mocha)
@@ -96,8 +111,40 @@ between every card (root padding 10, gap 10). Left to right, at zoom 1:
 - The glass values follow herdr-desk's layers: surface (sidebar, bars) ≈ 42%,
   panes ≈ 60%, elevated (menus) ≈ 92%, borders white 14% / 20%, radii
   16/14/12px.
+- `mods/spaces-icons/`: a clone of the shipped `spaces` mod
+  (`herdr-app do mod.clone '{"name":"spaces","as":"spaces-icons"}'`), used by the
+  `spaces` block instead of `spaces`. Its changes:
+  - `icons.js`: `findIcon(root)` lists the folders once (`fs.readdir`), skips
+    candidates whose first path part isn't there, checks the rest with
+    `fs.exists`, reads a PNG's width from its header, and copies the hit into
+    `data/spaces-icons/<hash of path>.<svg|png>` in the Herdr home, because
+    `image()` only reads paths relative to the home. SVGs are copied as text
+    (`fs.readFile` utf8 + `fs.writeFile`); PNGs with `exec("cmd", ["/c",
+    "copy", "/y", src, dest])` on Windows, `exec("cp", [src, dest])` elsewhere.
+  - `main.js`: `roots(space, panes)` gives the project folders,
+    `lookForIcons` runs in the 250ms `checkNew` tick and searches each folder
+    once per run, results go to `this.icons` and `setShared("spaces-icons.found",
+    {folder: path|null})`; `init` starts from that shared map. `grouped` reads
+    `panes()` once per render and passes each row its `icon`; `row` draws
+    `div().size(18).rounded(5).overflow_hidden().child(image(icon).size(18))`,
+    else the original letter tile. Everything else is the shipped `spaces`.
 
 ## Watch out
+
+- `spaces-icons` reads files outside its own folder (the projects of your
+  spaces) and runs a program to copy PNG icons (`cmd /c copy` on Windows,
+  `cp` elsewhere). It writes only under `data/spaces-icons/` and the shared key
+  `spaces-icons.found`. No network.
+- `image("C:/abs/path.png")` draws nothing: icons must be copied into the home.
+  `fs.writeFile` with the `Uint8Array` from `fs.readFile` wrote 0-byte files
+  in this build, hence the system copy for PNGs.
+- Reading `panes()` inside each row made the list too slow to render ("This view
+  could not be re-rendered"); read it once per render.
+- Spaces on other machines and the `~` space keep the letter tile. `.ico`
+  favicons aren't used (GPUI doesn't draw them). A changed icon file shows after
+  the next start; delete `data/spaces-icons/` and the shared key to forget all.
+- The rail (sidebar narrower than 160px) shows numbers, as the shipped mod does,
+  not icons.
 
 - Herdr draws translucency but no backdrop blur; herdr-desk's glass is frosted
   over Windows acrylic, here it is plain see-through. Over a background this
@@ -126,3 +173,7 @@ between every card (root padding 10, gap 10). Left to right, at zoom 1:
   (about `#171718` at the top left corner, `#17171a` in the sidebar), never
   blue or purple; the focused pane's border is `#60b9fc`.
 - `themes()` from a mod lists `glass` with `chrome` `#1a1a1e6b`.
+- `herdr-app check mods/spaces-icons` passes.
+- A space whose repo has `src-tauri/icons/128x128.png` shows that picture on its
+  avatar within about 10 seconds, and `data/spaces-icons/` holds a non-empty copy;
+  a space with no icon file shows its colored letter.

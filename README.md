@@ -10,11 +10,14 @@ The glassmorphism look of **herdr-desk** rebuilt for Herdr, in neutral graphite:
 |---|---|
 | `layouts/glass.json` | the layout: floating cards, 10px gaps, translucent terminals |
 | `layouts/glass.png` | the picture Settings shows for it |
+| `mods/spaces-icons/` | the Spaces list, showing each project's own icon on its avatar |
 | `themes/glass.json` | the layout's own theme: graphite glass colors with alpha |
 | `backgrounds/glass-ambient.png` | the background picture (2560×1640) |
 | `tools/ambient.ps1` | regenerates the background (Windows PowerShell) |
 
-Only Herdr's shipped mods are used: no custom code, no programs run, no network access.
+**Project icons:** the Spaces list (`mods/spaces-icons`, a clone of Herdr's `spaces`) shows each project's own icon on its avatar when the project has one: a Tauri app icon, `icon.*`, `logo.*`, `assets/`, `public/` logos, or a favicon, in the project folder, one folder down, or in `apps/*` / `packages/*`. Drop an `.herdr/icon.png` (or `.svg`) in a project to choose its icon. Projects without one keep the colored letter.
+
+What it touches: it reads your spaces' project folders, copies the icon it finds into `~/.config/herdr-app/data/spaces-icons/` (PNGs with `cmd /c copy` on Windows, `cp` elsewhere) and remembers the results in shared state. No network access. The other mods are Herdr's own.
 
 ## Install
 
@@ -22,7 +25,7 @@ Copy the folders into your Herdr home (`~/.config/herdr-app`, or `HERDR_APP_HOME
 
 ```sh
 git clone https://github.com/MarcozVD/herdr-layout-glass
-cp -r herdr-layout-glass/{layouts,themes,backgrounds} ~/.config/herdr-app/
+cp -r herdr-layout-glass/{layouts,themes,backgrounds,mods} ~/.config/herdr-app/
 herdr-app do layout.switch '{"name":"glass"}'
 ```
 
@@ -30,11 +33,11 @@ On Windows PowerShell:
 
 ```powershell
 git clone https://github.com/MarcozVD/herdr-layout-glass
-Copy-Item -Recurse -Force herdr-layout-glass/layouts,herdr-layout-glass/themes,herdr-layout-glass/backgrounds "$HOME/.config/herdr-app/"
+Copy-Item -Recurse -Force herdr-layout-glass/layouts,herdr-layout-glass/themes,herdr-layout-glass/backgrounds,herdr-layout-glass/mods "$HOME/.config/herdr-app/"
 herdr-app do layout.switch '{"name":"glass"}'
 ```
 
-`ctrl-shift-l` cycles back to your other layouts. To remove it, delete the files listed above from `~/.config/herdr-app`.
+`ctrl-shift-l` cycles back to your other layouts. To remove it, delete the files listed above (and `data/spaces-icons/`) from `~/.config/herdr-app`.
 
 Or ask your agent to add it: *"add the Herdr layout at github.com/MarcozVD/herdr-layout-glass"*.
 
