@@ -7,7 +7,7 @@
     16
   ],
   "background": {
-    "image": "backgrounds/desk-glass-ambient.png",
+    "image": "backgrounds/glass-ambient.png",
     "fit": "cover"
   },
   "terminal_padding": [
@@ -207,8 +207,8 @@
       "gap": 8
     }
   ],
-  "theme": "desk-glass",
-  "preview": "layouts/desk-glass.png",
+  "theme": "glass",
+  "preview": "layouts/glass.png",
   "padding": 10,
   "gap": 10,
   "terminal_opacity": 0.72

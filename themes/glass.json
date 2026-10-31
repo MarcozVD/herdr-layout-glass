@@ -1,5 +1,5 @@
 {
-  "background": "#181825",
+  "background": "#1a1a1e",
   "foreground": "#cdd6f4",
   "selection": "#45475a",
   "cursor": "#60b9fc",
@@ -22,12 +22,12 @@
     "#cdd6f4"
   ],
   "colors": {
-    "background": "#18182599",
-    "canvas": "#0b1020",
-    "chrome": "#1818256b",
-    "surface": "#18182580",
-    "popover": "#181825eb",
-    "raised": "#313244cc",
+    "background": "#1a1a1e99",
+    "canvas": "#0e0e10",
+    "chrome": "#1a1a1e6b",
+    "surface": "#1a1a1e80",
+    "popover": "#1a1a1eeb",
+    "raised": "#2c2c32cc",
     "hover": "#cdd6f41a",
     "selected": "#60b9fc38",
     "border": "#ffffff24",

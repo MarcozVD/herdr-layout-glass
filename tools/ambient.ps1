@@ -6,13 +6,13 @@ public static class Mesh {
   public static void Make(string path){
     int W=2560,Hh=1640; double s=2.0, rem=16*s;
     var bmp=new Bitmap(W,Hh,PixelFormat.Format24bppRgb);
-    var c0=H("#050609"); var c1=H("#0b1020"); var c2=H("#080b12");
+    var c0=H("#070708"); var c1=H("#111113"); var c2=H("#08080a");
     // blobs: color, alpha, rx, ry (rem), cx, cy (fraction), stop
     var blobs=new object[][]{
-      new object[]{H("#60b9fc"),0.46,48.0,34.0,0.08,-0.06,0.62},
-      new object[]{H("#89b4fa"),0.36,42.0,30.0,0.96,0.02,0.64},
-      new object[]{H("#cba6f7"),0.42,54.0,40.0,0.90,1.06,0.66},
-      new object[]{H("#6c7086"),0.38,40.0,30.0,0.02,0.98,0.62}};
+      new object[]{H("#ffffff"),0.09,48.0,34.0,0.08,-0.06,0.62},
+      new object[]{H("#ffffff"),0.05,42.0,30.0,0.96,0.02,0.64},
+      new object[]{H("#ffffff"),0.07,54.0,40.0,0.90,1.06,0.66},
+      new object[]{H("#ffffff"),0.04,40.0,30.0,0.02,0.98,0.62}};
     var rnd=new Random(7);
     double ang=160*Math.PI/180, dx=Math.Sin(ang), dy=-Math.Cos(ang);
     double len=Math.Abs(W*dx)+Math.Abs(Hh*dy);

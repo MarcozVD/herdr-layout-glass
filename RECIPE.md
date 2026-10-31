@@ -1,0 +1,128 @@
+# Glass
+
+The glassmorphism look of **herdr-desk** (the Tauri GUI for herdr) rebuilt in
+Herdr, in neutral graphite: the interface floats as separate smoked-glass
+cards (sidebar, tab bar, panes, status bar) over a near-black background with
+faint white haze, with rounded corners, hairline white borders and shadows. No
+colored glow behind the glass; color comes only from the text, the
+`#60b9fc` accent and the agents' status. Dark only.
+
+![Glass](preview.png)
+
+## What you see
+
+The window has no system title bar. A background picture fills it
+(`backgrounds/glass-ambient.png`, `cover`), and 10px of it shows around and
+between every card (root padding 10, gap 10). Left to right, at zoom 1:
+
+- **Background**: a 160° gradient `#070708` → `#111113` (55%) → `#08080a`
+  with four soft white hazes (strongest top left, then bottom right, top
+  right, bottom left) and faint grain. Reads about `#171718` at the top left
+  corner. No hue.
+- **Sidebar card**, 260px (44–480): `chrome` `#1a1a1e6b` (graphite at 42%),
+  radius 16, 1px `#ffffff24` border, large shadow. Inside: Herdr brand row with
+  search and fold (46px, drags the window); Spaces and Agents lists sharing the
+  height (each at least 90px); Settings and Add machine (69px).
+- **Work column**, 8px between its cards:
+  - **Tab bar card**, 42px: same glass, radius 14, medium shadow; tab pills,
+    `+` menu and window buttons; drags the window.
+  - **Panes**: the active tab's panes as glass cards, radius 14, 10px apart,
+    background `#1a1a1e99` (graphite at 60%), 1px `#ffffff24` border, focused
+    pane 1px `#60b9fc`; 30px header on each (program icon, title, folder).
+    Terminals draw at 72% opacity (`terminal_opacity: 0.72`).
+  - **Files/Changes card** on the right, 368px (280–900), hidden at start,
+    same glass as the sidebar.
+  - **Status bar card**, 28px: glass, radius 12, medium shadow; machine,
+    branch, agent count, palette hint.
+- Text `#cdd6f4`, secondary `#a6adc8`, dim `#7f849c`; hover `#cdd6f41a`,
+  selected rows `#60b9fc38`; menus and dialogs on `popover` `#1a1a1eeb` (92%);
+  raised controls `#2c2c32cc`; buttons `#60b9fc` with `#14151c` text. Terminal
+  cursor `#60b9fc`, selection `#45475a`, padding 14px × 12px. Fonts: Herdr's
+  defaults, JetBrains Mono 14 and Geist.
+
+## How it behaves
+
+- Agent status in the shipped mods (agents list, tab pills, status bar):
+  **working** `#89b4fa`, **blocked** `#f9e2af`, **done** `#a6e3a1`, **idle**
+  `#6c7086`, unknown `#cba6f7`.
+- Everything else is Herdr (main): click a space or tab to show it, `+` starts
+  a terminal or an agent, the tab bar opens Files/Changes, `ctrl-shift-b` folds
+  the sidebar, `ctrl-shift-l` cycles layouts, panes drag by the top-center grip.
+- Nothing animates; the background is a still picture.
+
+## Built from
+
+- `layouts/glass.json`: the shipped `main` tree, restyled. Root: `row`,
+  `titlebar: "none"`, `traffic_lights: [12, 16]`, `theme: "glass"`,
+  `preview: "layouts/glass.png"`,
+  `background: { "image": "backgrounds/glass-ambient.png", "fit": "cover" }`,
+  `padding: 10`, `gap: 10`, `terminal_padding: [14, 12]`,
+  `terminal_opacity: 0.72`, no divider.
+  - `sidebar` (column, 260px, min 44, max 480, `resizable: false`, background
+    `chrome`, radius 16, border 1 `border`, shadow `lg`): `brand` (46px,
+    `window_drag`, mod `workspace-chrome`), `sidebar-lists` column with
+    `spaces` and `agents` (weight 1, min 90), `sidebar-footer` (69px, mod
+    `workspace-chrome`, props `{ "footer": true }`).
+  - `work` (column, gap 8, `resizable: false`): `tabs` (42px, `window_drag`, mod
+    `tabs`, `chrome`, radius 14, border 1 `border`, shadow `md`); `work-body`
+    row (padding 0, gap 10) with `main` (`{ "tab": "active" }`, pane frame gap
+    10, radius 14, background `background`, `lone: true`, border 1 `border`,
+    focus 1 `accent`, header mod `pane` 30px top `reveal: "always"`) and a
+    hidden `panel` column (368px, 280–900, glass like the sidebar) holding a
+    `stack` of `files` and `changes`; `status` (28px, mod `workspace-status`,
+    `chrome`, radius 12, border, shadow `md`).
+- Mods: only shipped ones (`workspace-chrome`, `spaces`, `agents`, `tabs`,
+  `pane`, `files`, `changes`, `workspace-status`). No custom code, no programs,
+  no network.
+- `themes/glass.json` (named like the layout, so it is the layout's own):
+  top level `background` `#1a1a1e`, `foreground` `#cdd6f4`, `selection`
+  `#45475a`, `cursor` `#60b9fc`, `ansi` (Catppuccin Mocha)
+  `#1e1e2e #f38ba8 #a6e3a1 #f9e2af #89b4fa #cba6f7 #94e2d5 #cdd6f4
+  #6c7086 #ea9ebb #b0e0b6 #eedfc0 #9abdf9 #ccb2f6 #a2dfdd #cdd6f4`.
+  `colors` with alpha: `background` `#1a1a1e99`, `canvas` `#0e0e10`, `chrome`
+  `#1a1a1e6b`, `surface` `#1a1a1e80`, `popover` `#1a1a1eeb`, `raised`
+  `#2c2c32cc`, `hover` `#cdd6f41a`, `selected` `#60b9fc38`, `border`
+  `#ffffff24`, `input` `#ffffff33`, `muted` `#a6adc8`, `dim` `#7f849c`,
+  `accent`/`solid` `#60b9fc`, `accent_foreground`/`solid_foreground` `#14151c`,
+  status colors as above.
+- Art: `backgrounds/glass-ambient.png`, 2560×1640, made by
+  `tools/ambient.ps1` (Windows PowerShell + System.Drawing:
+  `powershell -File tools/ambient.ps1 -Out backgrounds/glass-ambient.png`).
+  Each haze is a white radial ellipse blended over the gradient with strength
+  falling linearly to 0 at its edge: 9%, 1536×1088px at (8%, −6%), edge at
+  62%; 5%, 1344×960 at (96%, 2%), 64%; 7%, 1728×1280 at (90%, 106%), 66%; 4%,
+  1280×960 at (2%, 98%), 62%; grain ±2%. Same geometry as herdr-desk's
+  `app.css` ambient blobs, scaled 2×, with the color taken out.
+- The glass values follow herdr-desk's layers: surface (sidebar, bars) ≈ 42%,
+  panes ≈ 60%, elevated (menus) ≈ 92%, borders white 14% / 20%, radii
+  16/14/12px.
+
+## Watch out
+
+- Herdr draws translucency but no backdrop blur; herdr-desk's glass is frosted
+  over Windows acrylic, here it is plain see-through. Over a background this
+  dark the cards read mostly through their borders, shadows and the haze in
+  the gaps.
+- Only `colors` take alpha; keep the theme's top-level `background`,
+  `foreground` and `ansi` opaque `#rrggbb`.
+- Dark only: one background picture can't follow light/dark.
+- Background pictures are cached: after replacing the PNG, rename it (and the
+  layout's path) or restart Herdr.
+- Most programs paint their own terminal background, so terminals stay nearly
+  opaque even at `terminal_opacity: 0.72`.
+- `sidebar.resizable` stays `false`; `true` makes the brand/lists/footer
+  boundaries draggable, not the sidebar's width.
+- A theme pick in Settings > Look is saved per layout in `layouts/.state/` and
+  beats the file; reset with `herdr-app do app.theme '{"name":"glass"}'`.
+- `herdr-app shot` returns the last rendered frame; let the window redraw
+  after a change.
+
+## Done when
+
+- `herdr-app do layout.switch '{"name":"glass"}'` shows it and
+  `herdr-app status` lists no errors.
+- A screenshot shows separate rounded cards with `#ffffff24` borders and 10px
+  of background between them; background and sidebar pixels are neutral grays
+  (about `#171718` at the top left corner, `#17171a` in the sidebar), never
+  blue or purple; the focused pane's border is `#60b9fc`.
+- `themes()` from a mod lists `glass` with `chrome` `#1a1a1e6b`.
